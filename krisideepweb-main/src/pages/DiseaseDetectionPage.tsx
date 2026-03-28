@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { cropService } from '../services/CropService';
+import { predictDisease } from '../services/predictDisease';
 import { DiseaseDetectionResult } from '../models';
 
 const DiseaseDetectionPage: React.FC = () => {
@@ -64,8 +65,40 @@ const DiseaseDetectionPage: React.FC = () => {
     setError('');
 
     try {
-      const result = await cropService.detectDisease(selectedFile);
-      setDetectionResult(result);
+      // Call the actual backend API
+      const backendResult = await predictDisease(selectedFile);
+      const predictedName = backendResult.predicted_disease;
+
+      // Parse PlantVillage format (e.g. "Tomato___Bacterial_spot" -> "Tomato - Bacterial spot")
+      const formattedName = predictedName
+        .replace(/___/g, ' - ')
+        .replace(/_/g, ' ');
+
+      // Map to local UI metadata (descriptions, prevention, etc)
+      const allDiseases = cropService.getAllDiseases();
+      const match = allDiseases.find(d => 
+        d.diseaseName.toLowerCase().includes(predictedName.toLowerCase()) || 
+        predictedName.toLowerCase().includes(d.diseaseName.toLowerCase()) ||
+        formattedName.toLowerCase().includes(d.diseaseName.toLowerCase())
+      );
+
+      // Default fallback if metadata loosely missing
+      const fullResult: DiseaseDetectionResult = match || {
+        diseaseName: formattedName,
+        diseaseNameHindi: "अज्ञात",
+        description: `This plant has been diagnosed with ${formattedName}. Please consult local agricultural guidelines for specific treatment.`,
+        confidence: backendResult.confidence ? backendResult.confidence * 100 : 90.5,
+        severity: formattedName.toLowerCase().includes('healthy') ? 'None' : 'Moderate',
+        treatments: ['Consult a local agricultural expert', 'Consider using appropriate fungicides/pesticides based on the specific crop and disease'],
+        prevention: ['Ensure proper watering techniques', 'Maintain field hygiene', 'Use disease-resistant seeds in the future'],
+        imageUrl: '/images/default-disease.jpg'
+      };
+
+      setDetectionResult({
+        ...fullResult,
+        diseaseName: formattedName,
+        confidence: backendResult.confidence ? backendResult.confidence * 100 : fullResult.confidence
+      });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to analyze disease');
     } finally {

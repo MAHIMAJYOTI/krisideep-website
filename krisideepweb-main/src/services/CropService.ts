@@ -204,149 +204,154 @@ class CropService {
     return `Based on your soil analysis (pH: ${request.soilPH}, Moisture: ${request.soilMoisture}%), ${topCrop} appears to be the most suitable crop for your ${request.farmSize}-acre farm. The recommended crops are well-suited for your soil conditions and climate.`;
   }
 
+  // Comprehensive disease catalog for metadata lookup
+  private dummyDiseases: DiseaseDetectionResult[] = [
+    {
+      diseaseName: 'Bacterial Leaf Blight',
+      diseaseNameHindi: 'जीवाणु पत्ती झुलसा',
+      description: 'A serious bacterial disease causing water-soaked lesions on leaves, leading to significant yield loss in rice crops.',
+      confidence: 89.2,
+      severity: 'High',
+      treatments: [
+        'Apply copper-based bactericides',
+        'Remove and destroy infected plants',
+        'Improve field drainage',
+        'Use resistant varieties in next season',
+        'Apply streptomycin spray (0.1%)',
+      ],
+      prevention: [
+        'Use certified disease-free seeds',
+        'Maintain proper field hygiene',
+        'Avoid overhead irrigation',
+        'Practice crop rotation',
+        'Monitor weather conditions',
+      ],
+      imageUrl: '/images/bacterial-blight.jpg',
+    },
+    {
+      diseaseName: 'Powdery Mildew',
+      diseaseNameHindi: 'चूर्णी फफूंदी',
+      description: 'Fungal disease causing white powdery coating on leaves, reducing photosynthesis and plant vigor.',
+      confidence: 85.7,
+      severity: 'Moderate',
+      treatments: [
+        'Apply sulfur-based fungicides',
+        'Spray neem oil solution (2%)',
+        'Use baking soda spray (1 tsp per liter)',
+        'Remove heavily infected leaves',
+        'Apply potassium bicarbonate',
+      ],
+      prevention: [
+        'Ensure good air circulation',
+        'Avoid overcrowding plants',
+        'Water at soil level only',
+        'Use resistant varieties',
+        'Regular field monitoring',
+      ],
+      imageUrl: '/images/powdery-mildew.jpg',
+    },
+    {
+      diseaseName: 'Rust Disease',
+      diseaseNameHindi: 'रस्ट रोग',
+      description: 'Fungal disease causing orange or brown pustules on leaves, stems, and grains, affecting crop quality.',
+      confidence: 91.3,
+      severity: 'High',
+      treatments: [
+        'Apply propiconazole fungicide',
+        'Remove infected plant debris',
+        'Improve field ventilation',
+        'Use systemic fungicides',
+        'Apply mancozeb spray',
+      ],
+      prevention: [
+        'Plant resistant varieties',
+        'Maintain proper spacing',
+        'Avoid excessive nitrogen',
+        'Practice crop rotation',
+        'Monitor humidity levels',
+      ],
+      imageUrl: '/images/rust-disease.jpg',
+    },
+    {
+      diseaseName: 'Anthracnose',
+      diseaseNameHindi: 'एन्थ्रेक्नोज',
+      description: 'Fungal disease causing dark, sunken lesions on fruits, leaves, and stems, leading to fruit rot.',
+      confidence: 87.8,
+      severity: 'Moderate',
+      treatments: [
+        'Apply chlorothalonil fungicide',
+        'Remove infected plant parts',
+        'Improve air circulation',
+        'Use copper-based sprays',
+        'Apply thiophanate-methyl',
+      ],
+      prevention: [
+        'Use disease-free seeds',
+        'Avoid overhead watering',
+        'Maintain proper spacing',
+        'Practice field sanitation',
+        'Monitor weather conditions',
+      ],
+      imageUrl: '/images/anthracnose.jpg',
+    },
+    {
+      diseaseName: 'Root Rot',
+      diseaseNameHindi: 'जड़ सड़न',
+      description: 'Soil-borne fungal disease causing root decay, wilting, and plant death, especially in waterlogged conditions.',
+      confidence: 83.5,
+      severity: 'High',
+      treatments: [
+        'Improve soil drainage',
+        'Apply fungicide drench',
+        'Remove infected plants',
+        'Use biological control agents',
+        'Apply carbendazim to soil',
+      ],
+      prevention: [
+        'Ensure proper drainage',
+        'Avoid overwatering',
+        'Use well-drained soil',
+        'Practice crop rotation',
+        'Maintain soil pH balance',
+      ],
+      imageUrl: '/images/root-rot.jpg',
+    },
+    {
+      diseaseName: 'Healthy Plant',
+      diseaseNameHindi: 'स्वस्थ पौधा',
+      description: 'The plant appears healthy with no visible signs of disease. Continue current care practices.',
+      confidence: 94.2,
+      severity: 'None',
+      treatments: [
+        'Continue regular care',
+        'Maintain proper nutrition',
+        'Monitor regularly',
+        'Apply preventive measures',
+      ],
+      prevention: [
+        'Regular field inspection',
+        'Proper watering schedule',
+        'Balanced fertilization',
+        'Good field hygiene',
+        'Use quality seeds',
+      ],
+      imageUrl: '/images/healthy-plant.jpg',
+    },
+  ];
+
+  // Get all diseases catalog
+  getAllDiseases(): DiseaseDetectionResult[] {
+    return this.dummyDiseases;
+  }
+
   // Simulate disease detection using ML model
   async detectDisease(imageFile: File): Promise<DiseaseDetectionResult> {
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Comprehensive disease detection results
-    const possibleDiseases: DiseaseDetectionResult[] = [
-      {
-        diseaseName: 'Bacterial Leaf Blight',
-        diseaseNameHindi: 'जीवाणु पत्ती झुलसा',
-        description: 'A serious bacterial disease causing water-soaked lesions on leaves, leading to significant yield loss in rice crops.',
-        confidence: 89.2,
-        severity: 'High',
-        treatments: [
-          'Apply copper-based bactericides',
-          'Remove and destroy infected plants',
-          'Improve field drainage',
-          'Use resistant varieties in next season',
-          'Apply streptomycin spray (0.1%)',
-        ],
-        prevention: [
-          'Use certified disease-free seeds',
-          'Maintain proper field hygiene',
-          'Avoid overhead irrigation',
-          'Practice crop rotation',
-          'Monitor weather conditions',
-        ],
-        imageUrl: '/images/bacterial-blight.jpg',
-      },
-      {
-        diseaseName: 'Powdery Mildew',
-        diseaseNameHindi: 'चूर्णी फफूंदी',
-        description: 'Fungal disease causing white powdery coating on leaves, reducing photosynthesis and plant vigor.',
-        confidence: 85.7,
-        severity: 'Moderate',
-        treatments: [
-          'Apply sulfur-based fungicides',
-          'Spray neem oil solution (2%)',
-          'Use baking soda spray (1 tsp per liter)',
-          'Remove heavily infected leaves',
-          'Apply potassium bicarbonate',
-        ],
-        prevention: [
-          'Ensure good air circulation',
-          'Avoid overcrowding plants',
-          'Water at soil level only',
-          'Use resistant varieties',
-          'Regular field monitoring',
-        ],
-        imageUrl: '/images/powdery-mildew.jpg',
-      },
-      {
-        diseaseName: 'Rust Disease',
-        diseaseNameHindi: 'रस्ट रोग',
-        description: 'Fungal disease causing orange or brown pustules on leaves, stems, and grains, affecting crop quality.',
-        confidence: 91.3,
-        severity: 'High',
-        treatments: [
-          'Apply propiconazole fungicide',
-          'Remove infected plant debris',
-          'Improve field ventilation',
-          'Use systemic fungicides',
-          'Apply mancozeb spray',
-        ],
-        prevention: [
-          'Plant resistant varieties',
-          'Maintain proper spacing',
-          'Avoid excessive nitrogen',
-          'Practice crop rotation',
-          'Monitor humidity levels',
-        ],
-        imageUrl: '/images/rust-disease.jpg',
-      },
-      {
-        diseaseName: 'Anthracnose',
-        diseaseNameHindi: 'एन्थ्रेक्नोज',
-        description: 'Fungal disease causing dark, sunken lesions on fruits, leaves, and stems, leading to fruit rot.',
-        confidence: 87.8,
-        severity: 'Moderate',
-        treatments: [
-          'Apply chlorothalonil fungicide',
-          'Remove infected plant parts',
-          'Improve air circulation',
-          'Use copper-based sprays',
-          'Apply thiophanate-methyl',
-        ],
-        prevention: [
-          'Use disease-free seeds',
-          'Avoid overhead watering',
-          'Maintain proper spacing',
-          'Practice field sanitation',
-          'Monitor weather conditions',
-        ],
-        imageUrl: '/images/anthracnose.jpg',
-      },
-      {
-        diseaseName: 'Root Rot',
-        diseaseNameHindi: 'जड़ सड़न',
-        description: 'Soil-borne fungal disease causing root decay, wilting, and plant death, especially in waterlogged conditions.',
-        confidence: 83.5,
-        severity: 'High',
-        treatments: [
-          'Improve soil drainage',
-          'Apply fungicide drench',
-          'Remove infected plants',
-          'Use biological control agents',
-          'Apply carbendazim to soil',
-        ],
-        prevention: [
-          'Ensure proper drainage',
-          'Avoid overwatering',
-          'Use well-drained soil',
-          'Practice crop rotation',
-          'Maintain soil pH balance',
-        ],
-        imageUrl: '/images/root-rot.jpg',
-      },
-      {
-        diseaseName: 'Healthy Plant',
-        diseaseNameHindi: 'स्वस्थ पौधा',
-        description: 'The plant appears healthy with no visible signs of disease. Continue current care practices.',
-        confidence: 94.2,
-        severity: 'None',
-        treatments: [
-          'Continue regular care',
-          'Maintain proper nutrition',
-          'Monitor regularly',
-          'Apply preventive measures',
-        ],
-        prevention: [
-          'Regular field inspection',
-          'Proper watering schedule',
-          'Balanced fertilization',
-          'Good field hygiene',
-          'Use quality seeds',
-        ],
-        imageUrl: '/images/healthy-plant.jpg',
-      },
-    ];
-
     // Randomly select a result for demonstration
-    const randomIndex = Math.floor(Math.random() * possibleDiseases.length);
-    return possibleDiseases[randomIndex];
+    const randomIndex = Math.floor(Math.random() * this.dummyDiseases.length);
+    return this.dummyDiseases[randomIndex];
   }
 
   // Get all available crops

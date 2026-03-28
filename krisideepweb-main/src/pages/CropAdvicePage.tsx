@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config';
 import React, { useState } from 'react';
 import {
   Container,
@@ -23,53 +24,94 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { cropService } from '../services/CropService';
+
 import { CropAdviceRequest, CropRecommendation } from '../models';
 
 const CropAdvicePage: React.FC = () => {
   const { t } = useTranslation();
-  
-  const [formData, setFormData] = useState<CropAdviceRequest>({
+
+  const [formData, setFormData] = useState({
+    N: 90,
+    P: 42,
+    K: 43,
+    temperature: 21,
+    humidity: 80,
     soilPH: 6.5,
+    rainfall: 200,
     soilMoisture: 50,
-    farmSize: 2,
-    location: '',
   });
-  
+
   const [recommendation, setRecommendation] = useState<CropRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleInputChange = (field: keyof CropAdviceRequest) => (
+  const handleInputChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = field === 'location' ? event.target.value : parseFloat(event.target.value);
+    const value = parseFloat(event.target.value);
     setFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: isNaN(value) ? 0 : value,
     }));
   };
 
   const handleGetRecommendation = async () => {
-    if (!formData.location.trim()) {
-      setError('Please enter your location');
-      return;
-    }
-
     setLoading(true);
     setError('');
     setRecommendation(null);
 
     try {
-      const result = await cropService.getCropRecommendation(formData);
-      setRecommendation(result);
+      const response = await fetch(`${API_BASE_URL}/predict-crop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          N: formData.N,
+          P: formData.P,
+          K: formData.K,
+          temperature: formData.temperature,
+          humidity: formData.humidity,
+          ph: formData.soilPH,
+          rainfall: formData.rainfall,
+          soil_moisture_avg: formData.soilMoisture,
+          timestamp: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("API error");
+      }
+
+      const result = await response.json();
+
+      // Convert backend response → UI format
+    setRecommendation({
+      confidenceLevel: "High",
+      recommendation: result.predicted_crop,
+      timestamp: new Date(),
+      analysisData: formData,
+      recommendedCrops: [
+        {
+          id: "1",
+          name: result.predicted_crop,
+          nameHindi: result.predicted_crop,
+          description: "Predicted using ML model", 
+          expectedYield: 1000,
+          profitMargin: 20,
+          sustainabilityScore: 7,
+          suitableConditions: ["Good soil", "Adequate rainfall"],
+          imageUrl: ""
+        }
+      ]
+    });
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to get recommendations');
+      console.error(error);
+      setError("Failed to get recommendations");
     } finally {
       setLoading(false);
     }
   };
-
   const getConfidenceColor = (confidence: string) => {
     switch (confidence.toLowerCase()) {
       case 'high':
@@ -99,53 +141,87 @@ const CropAdvicePage: React.FC = () => {
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" component="h2" gutterBottom fontWeight="bold">
-              {t('crop_advice_form')}
+              {t('crop_advice_form') || 'Crop Advice Form'}
             </Typography>
-            
+
             <Box component="form" sx={{ mt: 2 }}>
-              <TextField
-                fullWidth
-                label={t('soil_ph')}
-                type="number"
-                value={formData.soilPH}
-                onChange={handleInputChange('soilPH')}
-                inputProps={{ min: 0, max: 14, step: 0.1 }}
-                helperText="pH range: 0-14 (6.0-7.5 is ideal for most crops)"
-                sx={{ mb: 3 }}
-              />
-              
-              <TextField
-                fullWidth
-                label={t('soil_moisture')}
-                type="number"
-                value={formData.soilMoisture}
-                onChange={handleInputChange('soilMoisture')}
-                inputProps={{ min: 0, max: 100, step: 1 }}
-                helperText="Moisture percentage: 0-100%"
-                sx={{ mb: 3 }}
-              />
-              
-              <TextField
-                fullWidth
-                label={t('farm_size')}
-                type="number"
-                value={formData.farmSize}
-                onChange={handleInputChange('farmSize')}
-                inputProps={{ min: 0.1, step: 0.1 }}
-                helperText="Farm size in acres"
-                sx={{ mb: 3 }}
-              />
-              
-              <TextField
-                fullWidth
-                label={t('location')}
-                value={formData.location}
-                onChange={handleInputChange('location')}
-                placeholder="Enter your city, state"
-                helperText="Your location helps us provide region-specific recommendations"
-                sx={{ mb: 3 }}
-              />
-              
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Nitrogen (N)"
+                    type="number"
+                    value={formData.N}
+                    onChange={handleInputChange('N')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Phosphorus (P)"
+                    type="number"
+                    value={formData.P}
+                    onChange={handleInputChange('P')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Potassium (K)"
+                    type="number"
+                    value={formData.K}
+                    onChange={handleInputChange('K')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Temperature (°C)"
+                    type="number"
+                    value={formData.temperature}
+                    onChange={handleInputChange('temperature')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Humidity (%)"
+                    type="number"
+                    value={formData.humidity}
+                    onChange={handleInputChange('humidity')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Soil pH"
+                    type="number"
+                    value={formData.soilPH}
+                    onChange={handleInputChange('soilPH')}
+                    inputProps={{ min: 0, max: 14, step: 0.1 }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Rainfall (mm)"
+                    type="number"
+                    value={formData.rainfall}
+                    onChange={handleInputChange('rainfall')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Soil Moisture (%)"
+                    type="number"
+                    value={formData.soilMoisture}
+                    onChange={handleInputChange('soilMoisture')}
+                    inputProps={{ min: 0, max: 100, step: 1 }}
+                  />
+                </Grid>
+              </Grid>
+
               <Button
                 fullWidth
                 variant="contained"
@@ -153,9 +229,9 @@ const CropAdvicePage: React.FC = () => {
                 onClick={handleGetRecommendation}
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} /> : <AgricultureIcon />}
-                sx={{ py: 1.5 }}
+                sx={{ py: 1.5, mt: 3 }}
               >
-                {loading ? 'Analyzing...' : t('get_recommendation')}
+                {loading ? 'Analyzing...' : t('get_recommendation') || 'Get Recommendation'}
               </Button>
             </Box>
 
@@ -174,7 +250,7 @@ const CropAdvicePage: React.FC = () => {
               <Typography variant="h6" component="h2" gutterBottom fontWeight="bold">
                 {t('recommended_crops')}
               </Typography>
-              
+
               <Box sx={{ mb: 3 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   Confidence Level:
@@ -204,7 +280,7 @@ const CropAdvicePage: React.FC = () => {
                         ({crop.nameHindi})
                       </Typography>
                     </Box>
-                    
+
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {crop.description}
                     </Typography>
